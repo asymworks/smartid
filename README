@@ -1,0 +1,16 @@
+smartid : Remote Uwatec Smart Protocol Daemon
+---------------------------------------------
+
+Author: Jonathan Krauss
+E-Mail: jkrauss <at> asymworks <dot> com
+
+The SmartI Daemon provides a method to transfer data from a Uwatec Smart device
+across a network, using an IrDA adapter local to the machine where the daemon
+runs.  Its primary target is to run on a Raspberry Pi and transfer data to a
+Mac OS X Mavericks machine, which does not have IrDA support.
+
+This code is released under a BSD 3-Clause License
+
+BUILD DEPENDENCIES
+------------------
+libevent
