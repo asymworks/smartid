@@ -52,6 +52,7 @@
 
 #include <event2/event.h>
 
+#include "irda.h"
 #include "smartid_logging.h"
 #include "smartid_server.h"
 #include "smartid_version.h"
@@ -409,9 +410,18 @@ int main(int argc, char ** argv)
 		return rv;
 	}
 
+	/* Setup IrDA */
+	rv = irda_init();
+	if (rv != 0)
+	{
+		smartid_log_error("Failed to initialize IrDA (code %d: %s)", irda_errcode(), irda_errmsg());
+		return rv;
+	}
+
 	/* Initialize and Run Smart-I Daemon */
 	smartid_log_info("%s/%s (%s)", SMARTID_APP_NAME, SMARTID_VERSION_STRING, SMARTID_MACHINE);
 	rv = smartid_run();
+	irda_cleanup();
 	smartid_log_info("%s is exiting (code %d)", SMARTID_APP_TITLE, rv);
 
 	return rv;

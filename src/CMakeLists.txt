@@ -5,6 +5,7 @@
 # C/C++ Source Files
 set(SMARTID_SRCS
     base64.c
+    irda.c
     smartid_cmd.c
     smartid_conn.c
     smartid_logging.c

@@ -39,6 +39,7 @@
  * Functions to handle client connections in the Smart-I Daemon.
  */
 
+#include "irda.h"
 #include "smarti_codes.h"
 #include "smartid_version.h"
 
@@ -111,6 +112,9 @@ void smartid_conn_flush(smarti_conn_t conn);
 
 //! @return Connection Client Address
 const char * smartid_conn_client(smarti_conn_t conn);
+
+//! @return Connection IrDA Handle
+irda_t smartid_conn_irda(smarti_conn_t conn);
 
 //! Send Ready Response
 #define smartid_conn_send_ready(c) \

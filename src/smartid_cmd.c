@@ -29,6 +29,7 @@
  */
 
 #include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 #include <strings.h>						// strncasecmp
 
@@ -85,6 +86,46 @@ static struct smarti_cmd_t smarti_cmd_table[] =
 	{"xfer",	"Transfer data from the device",						smartid_cmd_xfer},
 	{0,			0,														0}
 };
+
+//! IrDA Device Info List Entry
+struct irda_dev_info_t
+{
+	unsigned int				addr;
+	const char *				name;
+	unsigned int				charset;
+	unsigned int				hints;
+
+	struct irda_dev_info_t *	next;
+};
+
+// IrDA Enumeration Callback
+void irda_enum_cb(unsigned int addr, const char * name, unsigned int charset, unsigned int hints, void * arg)
+{
+	struct irda_dev_info_t * dev;
+	struct irda_dev_info_t ** plist = (struct irda_dev_info_t **)arg;
+
+	if (! arg)
+		return;
+
+	/* Fill in Device Info */
+	dev = (struct irda_dev_info_t *)malloc(sizeof(struct irda_dev_info_t));
+	if (! dev)
+	{
+		smartid_log_error("Failed to allocate struct irda_dev_info_t");
+		return;
+	}
+
+	smartid_log_debug("Found device '%s' at %lu", name, addr);
+
+	dev->addr = addr;
+	dev->name = strdup(name);
+	dev->charset = charset;
+	dev->hints = hints;
+
+	/* Insert as List Head */
+	dev->next = (* plist);
+	(* plist) = dev;
+}
 
 void smartid_cmd_process(smarti_conn_t c, const char * cmd_line, size_t cmd_len)
 {
@@ -143,6 +184,21 @@ void smartid_cmd_process(smarti_conn_t c, const char * cmd_line, size_t cmd_len)
 	}
 }
 
+#define CHECK_CMD \
+	if (! c || ! cmd) \
+	{ \
+		smartid_log_error("Invalid pointer passed to %s", __func__); \
+		return; \
+	}
+
+#define CHECK_NO_PARAMS \
+	if (params) \
+	{ \
+		smartid_conn_send_responsef(c, SMARTI_ERROR_INVALID_COMMAND, "Syntax error in %s", cmd->name); \
+		smartid_log_warning("Syntax error in command '%s': unexpected parameters", cmd->name); \
+		return; \
+	}
+
 static void smartid_cmd_close(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
 {
 	if (! c || ! cmd)
@@ -154,10 +210,53 @@ static void smartid_cmd_close(smarti_conn_t c, struct smarti_cmd_t * cmd, const 
 
 static void smartid_cmd_enum(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
 {
-	if (! c || ! cmd)
+	int nd;
+	irda_t s;
+	struct irda_dev_info_t * list = 0;
+	struct irda_dev_info_t * it = 0;
+
+	CHECK_CMD
+	CHECK_NO_PARAMS
+
+	s = smartid_conn_irda(c);
+	if (! s)
 	{
-		smartid_log_error("Invalid pointer passed to cmd_enum()");
+		smartid_conn_send_response(c, SMARTI_ERROR_IRDA, "IrDA subsystem error");
+		smartid_log_warning("No IrDA socket open in smartid_cmd_enum()");
 		return;
+	}
+
+	/* Enumerate Devices */
+	nd = irda_socket_discover(s, irda_enum_cb, & list);
+	if (nd < 0)
+	{
+		smartid_conn_send_response(c, SMARTI_ERROR_IRDA, "IrDA subsystem error");
+		smartid_log_warning("No IrDA socket open in smartid_cmd_enum()");
+		return;
+	}
+
+	/* No Devices Found */
+	if (nd == 0)
+	{
+		smartid_conn_send_response(c, SMARTI_STATUS_NO_DEVS, "No Devices");
+		smartid_log_debug("No IrDA devices found for ENUM command");
+		return;
+	}
+
+	/* Generate Return Information */
+	for (it = list; it; it = it->next)
+	{
+		smartid_conn_send_responsef(c, SMARTI_STATUS_INFO, "Device %lu: %s", it->addr, it->name);
+	}
+
+	/* Free Connection List */
+	while (list)
+	{
+		it = list->next;
+		if (list->name)
+			free(list->name);
+		free(list);
+		list = it;
 	}
 }
 

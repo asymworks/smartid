@@ -48,6 +48,7 @@
 #include <event2/util.h>
 
 #include "base64.h"
+#include "irda.h"
 #include "smarti_codes.h"
 #include "smartid_logging.h"
 #include "smartid_cmd.h"
@@ -67,9 +68,10 @@
 struct smarti_conn_t_
 {
 	int			net_fd;						///< Network Socket File Descriptor
-	int			irda_fd;					///< IrDA Socket File Descriptor
 	int			shutdown;					///< Whether the socket has shut down
 	char 		addr[INET6_ADDRSTRLEN];		///< Client IP Address
+
+	irda_t		irda;						///< IrDA Socket Handle
 
 	struct event_base *		ev_loop;		///< Server Event Loop
 	struct evbuffer *		ev_buffer;		///< Connection Event Buffer
@@ -183,6 +185,7 @@ static void conn_event(struct bufferevent * e, short err, void * arg)
 
 smarti_conn_t smartid_conn_alloc(int sockfd, const char * client_addr, struct event_base * evloop)
 {
+	int rv;
 	smarti_conn_t ret;
 	struct timeval	tv_read = { .tv_sec = 300, .tv_usec = 0 };
 
@@ -197,9 +200,27 @@ smarti_conn_t smartid_conn_alloc(int sockfd, const char * client_addr, struct ev
 	/* Setup the New Instance */
 	memset(ret, 0, sizeof(struct smarti_conn_t_));
 	ret->net_fd = sockfd;
-	ret->irda_fd = -1;
+	ret->irda = 0;
 	ret->ev_loop = evloop;
 	strncpy(ret->addr, client_addr, INET6_ADDRSTRLEN);
+
+	/* Create the IrDA Socket */
+	rv = irda_socket_open(& ret->irda);
+	if (rv != 0)
+	{
+		smartid_log_error("Failed to open IrDA handle (code %d: %s)", irda_errcode(), irda_errmsg());
+		smartid_conn_dispose(ret);
+		return 0;
+	}
+
+	/* Set IrDA Socket Timeout */
+	rv = irda_socket_set_timeout(ret->irda, 2000);
+	if (rv != 0)
+	{
+		smartid_log_error("Failed to set IrDA socket timeout (code %d: %s)", irda_errcode(), irda_errmsg());
+		smartid_conn_dispose(ret);
+		return 0;
+	}
 
 	/* Add to the Global Connection List */
 	conn_add(ret);
@@ -275,6 +296,9 @@ void smartid_conn_dispose(smarti_conn_t c)
 		evbuffer_free(c->ev_buffer);
 	if (c->ev_evt)
 		bufferevent_free(c->ev_evt);
+
+	if (c->irda)
+		irda_socket_close(c->irda);
 
 	if (c->net_fd != -1)
 	{
@@ -392,4 +416,15 @@ const char * smartid_conn_client(smarti_conn_t conn)
 	}
 
 	return conn->addr;
+}
+
+irda_t smartid_conn_irda(smarti_conn_t conn)
+{
+	if (! conn)
+	{
+		smartid_log_error("Invalid smarti_conn_t passed to smartid_conn_irda()");
+		return 0;
+	}
+
+	return conn->irda;
 }
