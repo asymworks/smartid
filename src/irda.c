@@ -22,7 +22,7 @@
 
 /* #define HAVE_POLL_H */
 /* #define HAVE_SYS_POLL_H */
-/* #define HAVE_SYS_SELECT_H */
+#define HAVE_SYS_SELECT_H
 
 /* #define HAVE_POLL */
 #define HAVE_SELECT
