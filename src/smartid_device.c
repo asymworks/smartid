@@ -292,3 +292,13 @@ int smartid_dev_connect(smart_device_t dev, unsigned int addr, int lsap, size_t 
 	/* Success */
 	return 0;
 }
+
+int smartid_dev_model(smart_device_t dev, uint8_t * model)
+{
+	return smart_read_uchar(dev, "\x10", model);
+}
+
+int smartid_dev_serial(smart_device_t dev, uint8_t * serial)
+{
+	return smart_read_ulong(dev, "\x14", serial);
+}

@@ -37,6 +37,8 @@
  * @author Jonathan Krauss <jkrauss@asymworks.com>
  */
 
+#include <stdint.h>
+
 #include "irda.h"
 
 //! Smart Device Handle
@@ -66,5 +68,21 @@ void smartid_dev_dispose(smart_device_t);
  * @return Zero on Success, Non-Zero on Failure
  */
 int smartid_dev_connect(smart_device_t, unsigned int, int, size_t);
+
+/**
+ * @brief Get the Model Number of a Smart Device
+ * @param[in] Smart Device Handle
+ * @param[out] Smart Device Model
+ * @return Zero on Success, Non-Zero on Failure
+ */
+int smartid_dev_model(smart_device_t, uint8_t *);
+
+/**
+ * @brief Get the Serial Number of a Smart Device
+ * @param[in] Smart Device Handle
+ * @param[out] Smart Device Serial
+ * @return Zero on Success, Non-Zero on Failure
+ */
+int smartid_dev_serial(smart_device_t, uint32_t *);
 
 #endif /* SMARTID_DEVICE_H_ */
