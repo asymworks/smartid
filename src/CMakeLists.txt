@@ -8,6 +8,7 @@ set(SMARTID_SRCS
     irda.c
     smartid_cmd.c
     smartid_conn.c
+    smartid_device.c
     smartid_logging.c
     smartid_main.c
     smartid_server.c

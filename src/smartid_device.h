@@ -28,26 +28,43 @@
  * WITH THE SOFTWARE.
  */
 
-#ifndef SMARTID_LOGGING_H_
-#define SMARTID_LOGGING_H_
+#ifndef SMARTID_DEVICE_H_
+#define SMARTID_DEVICE_H_
 
 /**
- * @file smartid_logging.h
- * @brief Smart-I Daemon Logging Control
+ * @file smartid_device.h
+ * @brief Smart-I Smart Device Driver
  * @author Jonathan Krauss <jkrauss@asymworks.com>
  */
 
-void smartid_log_open(void);
-void smartid_log_close(void);
+#include "irda.h"
 
-void smartid_log_use_syslog(int use);
-void smartid_log_use_stderr(int use);
-void smartid_log_debug_lvl(int lvl);
+//! Smart Device Handle
+typedef struct smart_device_t_ * smart_device_t;
 
-void smartid_log_syserror(const char * fmt, ...);
-void smartid_log_error(const char * fmt, ...);
-void smartid_log_warning(const char * fmt, ...);
-void smartid_log_info(const char * fmt, ...);
-void smartid_log_debug(const char * fmt, ...);
+/**
+ * @brief Allocate a new Smart Device
+ * @param[in] IrDA Connection Handle
+ * @return New Smart Device Handle
+ */
+smart_device_t smartid_dev_alloc(irda_t);
 
-#endif /* SMARTID_LOGGING_H_ */
+/**
+ * @brief Dispose of the Smart Device
+ * @param[in] Smart Device Handle
+ *
+ * Closes the Smart Device and frees all associated memory.
+ */
+void smartid_dev_dispose(smart_device_t);
+
+/**
+ * @brief Connect to a Smart Device
+ * @param[in] Smart Device Handle
+ * @param[in] IrDA Endpoint Address
+ * @param[in] IrDA LSAP Specifier
+ * @param[in] IrDA Chunk Size
+ * @return Zero on Success, Non-Zero on Failure
+ */
+int smartid_dev_connect(smart_device_t, unsigned int, int, size_t);
+
+#endif /* SMARTID_DEVICE_H_ */

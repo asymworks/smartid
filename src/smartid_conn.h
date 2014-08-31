@@ -41,6 +41,7 @@
 
 #include "irda.h"
 #include "smarti_codes.h"
+#include "smartid_device.h"
 #include "smartid_version.h"
 
 //! Smart-I Connection Handle
@@ -115,6 +116,12 @@ const char * smartid_conn_client(smarti_conn_t conn);
 
 //! @return Connection IrDA Handle
 irda_t smartid_conn_irda(smarti_conn_t conn);
+
+//! @return Connection Device Handle
+smart_device_t smartid_conn_device(smarti_conn_t conn);
+
+//! Set Connection Device Handle
+void smartid_conn_set_device(smarti_conn_t conn, smart_device_t dev);
 
 //! Send Ready Response
 #define smartid_conn_send_ready(c) \

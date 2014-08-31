@@ -91,9 +91,9 @@ static struct smarti_cmd_t smarti_cmd_table[] =
 struct irda_dev_info_t
 {
 	unsigned int				addr;
-	const char *				name;
 	unsigned int				charset;
 	unsigned int				hints;
+	char *						name;
 
 	struct irda_dev_info_t *	next;
 };
@@ -199,13 +199,31 @@ void smartid_cmd_process(smarti_conn_t c, const char * cmd_line, size_t cmd_len)
 		return; \
 	}
 
+#define CHECK_PARAMS \
+	if (! params) \
+	{ \
+		smartid_conn_send_responsef(c, SMARTI_ERROR_INVALID_COMMAND, "Syntax error in %s", cmd->name); \
+		smartid_log_warning("Syntax error in command '%s': missing parameter", cmd->name); \
+		return; \
+	}
+
 static void smartid_cmd_close(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
 {
-	if (! c || ! cmd)
+	CHECK_CMD
+	CHECK_NO_PARAMS
+
+	if (! smartid_conn_device(c))
 	{
-		smartid_log_error("Invalid pointer passed to cmd_close()");
+		smartid_conn_send_responsef(c, SMARTI_ERROR_NO_DEVICE, "No device is open");
 		return;
 	}
+
+	smartid_dev_dispose(smartid_conn_device(c));
+	smartid_conn_set_device(c, 0);
+
+	smartid_log_info("Disconnected from device [client: %s]", smartid_conn_client(c));
+
+	smartid_conn_send_response(c, SMARTI_STATUS_SUCCESS, "Device closed");
 }
 
 static void smartid_cmd_enum(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
@@ -264,18 +282,8 @@ static void smartid_cmd_help(smarti_conn_t c, struct smarti_cmd_t * cmd, const c
 {
 	int i;
 
-	if (! c || ! cmd)
-	{
-		smartid_log_error("Invalid pointer passed to cmd_help()");
-		return;
-	}
-
-	if (params)
-	{
-		smartid_conn_send_responsef(c, SMARTI_ERROR_INVALID_COMMAND, "Syntax error in %s", cmd->name);
-		smartid_log_warning("Syntax error in command '%s': unexpected parameters", cmd->name);
-		return;
-	}
+	CHECK_CMD
+	CHECK_NO_PARAMS
 
 	for (i = 0; smarti_cmd_table[i].name; i++)
 	{
@@ -288,54 +296,97 @@ static void smartid_cmd_help(smarti_conn_t c, struct smarti_cmd_t * cmd, const c
 
 static void smartid_cmd_model(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
 {
-	if (! c || ! cmd)
-	{
-		smartid_log_error("Invalid pointer passed to cmd_model()");
-		return;
-	}
+	CHECK_CMD
+	CHECK_NO_PARAMS
 }
 
 static void smartid_cmd_open(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
 {
-	if (! c || ! cmd)
+	int rv;
+	unsigned int addr;
+	unsigned int lsap = 1;
+	size_t chunk_size = 8;
+	smart_device_t dev = 0;
+
+	CHECK_CMD
+	CHECK_PARAMS
+
+	if (smartid_conn_device(c))
 	{
-		smartid_log_error("Invalid pointer passed to cmd_open()");
+		smartid_conn_send_responsef(c, SMARTI_ERROR_EXISTS, "Device already connected", params);
+		smartid_log_debug("OPEN called with an existing connection");
 		return;
 	}
+
+	if (sscanf(params, "%lu %lu %lu", & addr, & lsap, & chunk_size) < 1)
+	{
+		smartid_conn_send_responsef(c, SMARTI_ERROR_INVALID_COMMAND, "Invalid device address '%s'", params);
+		smartid_log_warning("Syntax error in command '%s': invalid parameter", cmd->name);
+		return;
+	}
+
+	dev = smartid_dev_alloc(smartid_conn_irda(c));
+	if (! dev)
+	{
+		smartid_conn_send_response(c, SMARTI_ERROR_INTERNAL, "Failed to allocate storage");
+		return;
+	}
+
+	rv = smartid_dev_connect(dev, addr, lsap, chunk_size);
+	if (rv != 0)
+	{
+		switch (rv)
+		{
+		case SMARTI_ERROR_CONNECT:
+			smartid_conn_send_response(c, rv, "Failed to connect to Smart Device");
+			break;
+
+		case SMARTI_ERROR_TIMEOUT:
+			smartid_conn_send_response(c, rv, "Failed to connect to Smart Device");
+			break;
+
+		case SMARTI_ERROR_HANDSHAKE:
+			smartid_conn_send_response(c, rv, "Failed to handshake with Smart Device");
+			break;
+
+		case SMARTI_ERROR_IO:
+			smartid_conn_send_response(c, rv, "Device I/O error");
+			break;
+
+		default:
+			smartid_conn_send_responsef(c, SMARTI_ERROR_INTERNAL, "Internal Error (code %d)", rv);
+
+		}
+
+		smartid_dev_dispose(dev);
+		return;
+	}
+
+	smartid_conn_set_device(c, dev);
+	smartid_conn_send_response(c, SMARTI_STATUS_SUCCESS, "Device Opened");
+	smartid_log_info("Connected to %lu [lsap: %lu, chunk_size: %lu, client: %s]", addr, lsap, chunk_size, smartid_conn_client(c));
 }
 
 static void smartid_cmd_serial(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
 {
-	if (! c || ! cmd)
-	{
-		smartid_log_error("Invalid pointer passed to cmd_serial()");
-		return;
-	}
+	CHECK_CMD
+	CHECK_NO_PARAMS
 }
 
 static void smartid_cmd_size(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
 {
-	if (! c || ! cmd)
-	{
-		smartid_log_error("Invalid pointer passed to cmd_size()");
-		return;
-	}
+	CHECK_CMD
+	CHECK_NO_PARAMS
 }
 
 static void smartid_cmd_token(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
 {
-	if (! c || ! cmd)
-	{
-		smartid_log_error("Invalid pointer passed to cmd_token()");
-		return;
-	}
+	CHECK_CMD
+	CHECK_PARAMS
 }
 
 static void smartid_cmd_xfer(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
 {
-	if (! c || ! cmd)
-	{
-		smartid_log_error("Invalid pointer passed to cmd_xfer()");
-		return;
-	}
+	CHECK_CMD
+	CHECK_NO_PARAMS
 }

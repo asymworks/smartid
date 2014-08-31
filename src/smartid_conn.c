@@ -50,9 +50,10 @@
 #include "base64.h"
 #include "irda.h"
 #include "smarti_codes.h"
-#include "smartid_logging.h"
 #include "smartid_cmd.h"
 #include "smartid_conn.h"
+#include "smartid_device.h"
+#include "smartid_logging.h"
 #include "smartid_version.h"
 
 /**
@@ -71,7 +72,8 @@ struct smarti_conn_t_
 	int			shutdown;					///< Whether the socket has shut down
 	char 		addr[INET6_ADDRSTRLEN];		///< Client IP Address
 
-	irda_t		irda;						///< IrDA Socket Handle
+	irda_t					irda;			///< IrDA Socket Handle
+	smart_device_t			dev;			///< Smart Device Handle
 
 	struct event_base *		ev_loop;		///< Server Event Loop
 	struct evbuffer *		ev_buffer;		///< Connection Event Buffer
@@ -201,6 +203,7 @@ smarti_conn_t smartid_conn_alloc(int sockfd, const char * client_addr, struct ev
 	memset(ret, 0, sizeof(struct smarti_conn_t_));
 	ret->net_fd = sockfd;
 	ret->irda = 0;
+	ret->dev = 0;
 	ret->ev_loop = evloop;
 	strncpy(ret->addr, client_addr, INET6_ADDRSTRLEN);
 
@@ -292,6 +295,9 @@ void smartid_conn_dispose(smarti_conn_t c)
 	}
 
 	/* Free Connection Resources */
+	if (c->dev)
+		smartid_dev_dispose(c->dev);
+
 	if (c->ev_buffer)
 		evbuffer_free(c->ev_buffer);
 	if (c->ev_evt)
@@ -427,4 +433,26 @@ irda_t smartid_conn_irda(smarti_conn_t conn)
 	}
 
 	return conn->irda;
+}
+
+smart_device_t smartid_conn_device(smarti_conn_t conn)
+{
+	if (! conn)
+	{
+		smartid_log_error("Invalid smarti_conn_t passed to smartid_conn_device()");
+		return 0;
+	}
+
+	return conn->dev;
+}
+
+void smartid_conn_set_device(smarti_conn_t conn, smart_device_t dev)
+{
+	if (! conn)
+	{
+		smartid_log_error("Invalid smarti_conn_t passed to smartid_conn_set_device()");
+		return;
+	}
+
+	conn->dev = dev;
 }
