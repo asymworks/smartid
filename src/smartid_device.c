@@ -225,11 +225,6 @@ void smartid_dev_dispose(smart_device_t dev)
 		return;
 	}
 
-	if (dev->epname)
-		free(dev->epname);
-	if (dev->devname)
-		free(dev->devname);
-
 	free(dev);
 }
 
