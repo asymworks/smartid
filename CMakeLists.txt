@@ -55,7 +55,8 @@ install(FILES ${CMAKE_SOURCE_DIR}/README DESTINATION ${SMARTID_DATADIR}/)
 # Install SysV init script
 install(
     FILES ${CMAKE_BINARY_DIR}/sysvinit-smartid 
-    DESTINATION /etc/init.d/${SMARTID_APP_NAME}
+    RENAME ${SMARTID_APP_NAME}
+    DESTINATION /etc/init.d
     PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
                 GROUP_EXECUTE             GROUP_READ
                 WORLD_EXECUTE             WORLD_READ
