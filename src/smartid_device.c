@@ -370,7 +370,7 @@ int smartid_dev_xfer_data(smart_device_t dev, uint8_t ** buf, uint32_t * size)
 	}
 
 	(* size) = nb - 4;
-	(* buf) = malloc(size);
+	(* buf) = malloc(* size);
 
 	pos = 0;
 	len = (* size);
