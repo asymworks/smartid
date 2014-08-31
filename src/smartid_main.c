@@ -64,6 +64,7 @@ int		g_debug;		///< Debugging level
 int		g_ipv4;			///< Bind to IPv4 Addresses Only
 int		g_ipv6;			///< Bind to IPv6 Addresses Only
 int		g_fork;			///< Fork and become a daemon
+char *	g_pidfile;		///< PID File for daemon
 int		g_port;			///< TCP Port for Smart-I (default in smartid_version.h)
 /*@}*/
 
@@ -115,16 +116,17 @@ int smartid_setup_signals()
 
 void smartid_usage()
 {
-	fprintf(stderr, "Usage: %s [-46Ddhv] [-p PORT]\n", SMARTID_APP_NAME);
+	fprintf(stderr, "Usage: %s [-46Ddhv] [-p PORT] [--pidfile PIDFILE]\n", SMARTID_APP_NAME);
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Options:\n");
-	fprintf(stderr, "  -4             : only bind to IPv4 addresses (default)\n");
-	fprintf(stderr, "  -6             : only bind to IPv6 addresses\n");
-	fprintf(stderr, "  -D             : do not detach and become a daemon\n");
-	fprintf(stderr, "  -d             : log debugging information\n");
-	fprintf(stderr, "  -h|--help      : show program options (this screen)\n");
-	fprintf(stderr, "  -p|--port PORT : define the TCP port on which to listen (default: %d)\n", SMARTID_PORT);
-	fprintf(stderr, "  -v|--version   : show version number\n");
+	fprintf(stderr, "  -4                : only bind to IPv4 addresses (default)\n");
+	fprintf(stderr, "  -6                : only bind to IPv6 addresses\n");
+	fprintf(stderr, "  -D                : do not detach and become a daemon\n");
+	fprintf(stderr, "  -d                : log debugging information\n");
+	fprintf(stderr, "  -h|--help         : show program options (this screen)\n");
+	fprintf(stderr, "  -p|--port PORT    : define the TCP port on which to listen (default: %d)\n", SMARTID_PORT);
+	fprintf(stderr, "  -v|--version      : show version number\n");
+	fprintf(stderr, "  --pidfile PIDFILE : write the daemon PID to the specified file (default: %s)\n", SMARTID_PIDFILE);
 }
 
 void smartid_version()
@@ -138,6 +140,7 @@ static struct option g_options[] =
 {
 	{ "help",		no_argument,		0,	'h' },
 	{ "version",	no_argument,		0,	'v' },
+	{ "pidfile",	required_argument,	0,	1	},
 	{ "port",		required_argument,	0,	'p' },
 	{ 0,			0,					0,	0 }
 };
@@ -156,6 +159,7 @@ int smartid_parse_args(int argc, char ** argv, int * exit)
 	g_fork = 1;
 	g_ipv4 = 1;
 	g_ipv6 = 0;
+	g_pidfile = strdup(SMARTID_PIDFILE);
 	g_port = SMARTID_PORT;
 
 	/* Parse Arguments */
@@ -163,6 +167,10 @@ int smartid_parse_args(int argc, char ** argv, int * exit)
 	{
 		switch (ch)
 		{
+		case 1:
+			g_pidfile = strdup(optarg);
+			break;
+
 		case '4':
 			ip4_flag = 1;
 			break;
@@ -255,13 +263,6 @@ int smartid_parse_args(int argc, char ** argv, int * exit)
 		}
 
 		g_port = port_arg;
-	}
-
-	/* Prevent Daemonizing */
-	if (g_fork)
-	{
-		fprintf(stderr, "WARNING: Forking is not an option... disabling\n");
-		g_fork = 0;
 	}
 
 	/* Setup Logging */
@@ -408,6 +409,56 @@ int main(int argc, char ** argv)
 	if (exit || (rv != 0))
 	{
 		return rv;
+	}
+
+	/* Daemonize */
+	if (g_fork)
+	{
+		FILE * fp_pid;
+		pid_t pid = 0;
+		pid_t sid = 0;
+
+		/* Fork the Process */
+		pid = fork();
+		if (pid < 0)
+		{
+			fprintf(stderr, "Error: fork() failed (code %d: %s)", errno, strerror(errno));
+			return 1;
+		}
+
+		if (pid > 0)
+		{
+			/* Kill the Parent Process */
+			return 0;
+		}
+
+		/* Setup the Daemon */
+		umask(0);
+		chdir("/");
+		pid = getpid();
+		sid = setsid();
+		if (sid < 0)
+		{
+			smartid_log_syserror("setsid() failed in child");
+			return 1;
+		}
+
+		/* Write the PID to disk */
+		fp_pid = fopen(g_pidfile, "w");
+		if (! fp_pid)
+		{
+			smartid_log_syserror("fopen() failed for pid file '%s'", g_pidfile);
+			return 1;
+		}
+
+		fprintf(fp_pid, "%lu", pid);
+		fflush(fp_pid);
+		fclose(fp_pid);
+
+		/* Close Standard I/O */
+		close(stdin);
+		close(stdout);
+		close(stderr);
 	}
 
 	/* Setup IrDA */

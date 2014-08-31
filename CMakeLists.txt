@@ -31,5 +31,8 @@ set(CMAKE_MODULE_PATH
 	${CMAKE_SOURCE_DIR}/cmake/modules/
 )
 
+# Setup Application Paths
+SET(SMARTID_PIDFILE		"/var/run/${SMARTID_APP_NAME}.pid")
+
 # Run Subdirectories
 add_subdirectory(src)
