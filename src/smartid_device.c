@@ -34,6 +34,7 @@
  * @author Jonathan Krauss <jkrauss@asymworks.com>
  */
 
+#include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -342,7 +343,6 @@ int smartid_dev_xfer_data(smart_device_t dev, uint8_t ** buf, uint32_t * size)
 	uint32_t nb;
 	uint32_t pos;
 	uint32_t len;
-	int timeout;
 	unsigned char cmd[] = { 0xc4, 0, 0, 0, 0, 0x10, 0x27, 0, 0 };
 
 	if (! dev || ! buf)
@@ -374,10 +374,19 @@ int smartid_dev_xfer_data(smart_device_t dev, uint8_t ** buf, uint32_t * size)
 	(* size) = nb - 4;
 	(* buf) = malloc(* size);
 
+	if (! (* buf))
+	{
+		smartid_log_warning("Failed to allocate %lu bytes for transfer buffer", * size);
+		return SMARTI_ERROR_INTERNAL;
+	}
+
+	smartid_log_debug("Allocated transfer buffer for %lu bytes", * size);
+
 	pos = 0;
 	len = (* size);
 	while (len > 0)
 	{
+		int timeout = 0;
 		size_t nc;
 
 		if (len > dev->csize)
@@ -389,10 +398,10 @@ int smartid_dev_xfer_data(smart_device_t dev, uint8_t ** buf, uint32_t * size)
 			nc = len;
 		}
 
-		rv = irda_socket_read(dev->s, & buf[pos], & nc, & timeout);
+		rv = irda_socket_read(dev->s, & (* buf)[pos], & nc, & timeout);
 		if (rv != 0)
 		{
-			smartid_log_error("Failed to read from the Uwatec Smart Device");
+			smartid_log_error("Failed to read from the Uwatec Smart Device (code %d: %s)", errno, strerror(errno));
 			free(buf);
 			* buf = 0;
 			* size = 0;
@@ -410,6 +419,8 @@ int smartid_dev_xfer_data(smart_device_t dev, uint8_t ** buf, uint32_t * size)
 
 		len -= nc;
 		pos += nc;
+
+		smartid_log_debug("Transferred chunk: %lu, cum: %lu, tot: %lu, rem: %lu", nc, pos, * size, len);
 	}
 
 	return 0;
