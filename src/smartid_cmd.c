@@ -271,7 +271,7 @@ static void smartid_cmd_enum(smarti_conn_t c, struct smarti_cmd_t * cmd, const c
 	/* Generate Return Information */
 	for (it = list; it; it = it->next)
 	{
-		smartid_conn_send_responsef(c, SMARTI_STATUS_INFO, "Device %s: %lu", it->name, it->addr);
+		smartid_conn_send_responsef(c, SMARTI_STATUS_INFO, "Device: %lu %s", it->addr, it->name);
 	}
 
 	/* Free Connection List */
