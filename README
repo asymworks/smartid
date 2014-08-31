@@ -9,6 +9,10 @@ across a network, using an IrDA adapter local to the machine where the daemon
 runs.  Its primary target is to run on a Raspberry Pi and transfer data to a
 Mac OS X Mavericks machine, which does not have IrDA support.
 
+The daemon is confirmed to work on a Raspberry Pi Model B running Raspbian and
+kernel version 3.12, and communicating with a Uwatec Aladin Tec 2G.  Other 
+platforms and Smart devices have not been evaluated.
+
 This code is released under a BSD 3-Clause License
 
 BUILD DEPENDENCIES
