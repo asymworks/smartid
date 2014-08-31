@@ -226,7 +226,7 @@ static void smartid_cmd_close(smarti_conn_t c, struct smarti_cmd_t * cmd, const 
 
 	smartid_log_info("Disconnected from device [client: %s]", smartid_conn_client(c));
 
-	smartid_conn_send_response(c, SMARTI_STATUS_SUCCESS, "Device closed");
+	smartid_conn_send_response(c, SMARTI_STATUS_SUCCESS, "Device Closed");
 }
 
 static void smartid_cmd_enum(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
@@ -312,7 +312,7 @@ static void smartid_cmd_model(smarti_conn_t c, struct smarti_cmd_t * cmd, const 
 		switch (rv)
 		{
 		case SMARTI_ERROR_TIMEOUT:
-			smartid_conn_send_response(c, rv, "Failed to connect to Smart Device");
+			smartid_conn_send_response(c, rv, "Timeout on Smart Device");
 			break;
 
 		case SMARTI_ERROR_IO:
@@ -329,7 +329,7 @@ static void smartid_cmd_model(smarti_conn_t c, struct smarti_cmd_t * cmd, const 
 		return;
 	}
 
-	smartid_conn_send_responsef(c, SMARTI_STATUS_INFO, "Model: %u", model);
+	smartid_conn_send_responsef(c, SMARTI_STATUS_INFO, "Model Number %u", model);
 }
 
 static void smartid_cmd_open(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
@@ -374,7 +374,7 @@ static void smartid_cmd_open(smarti_conn_t c, struct smarti_cmd_t * cmd, const c
 			break;
 
 		case SMARTI_ERROR_TIMEOUT:
-			smartid_conn_send_response(c, rv, "Failed to connect to Smart Device");
+			smartid_conn_send_response(c, rv, "Timeout on Smart Device");
 			break;
 
 		case SMARTI_ERROR_HANDSHAKE:
@@ -414,7 +414,7 @@ static void smartid_cmd_serial(smarti_conn_t c, struct smarti_cmd_t * cmd, const
 		switch (rv)
 		{
 		case SMARTI_ERROR_TIMEOUT:
-			smartid_conn_send_response(c, rv, "Failed to connect to Smart Device");
+			smartid_conn_send_response(c, rv, "Timeout on Smart Device");
 			break;
 
 		case SMARTI_ERROR_IO:
@@ -431,21 +431,67 @@ static void smartid_cmd_serial(smarti_conn_t c, struct smarti_cmd_t * cmd, const
 		return;
 	}
 
-	smartid_conn_send_responsef(c, SMARTI_STATUS_INFO, "Serial: %lu", serial);
+	smartid_conn_send_responsef(c, SMARTI_STATUS_INFO, "Serial Number %lu", serial);
 }
 
 static void smartid_cmd_size(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
 {
+	int rv;
+	uint32_t len;
+
 	CHECK_CMD
 	CHECK_NO_PARAMS
 	CHECK_DEVICE
+
+	rv = smartid_dev_xfer_size(smartid_conn_device(c), & len);
+	if (rv != 0)
+	{
+		switch (rv)
+		{
+		case SMARTI_ERROR_TIMEOUT:
+			smartid_conn_send_response(c, rv, "Timeout on Smart Device");
+			break;
+
+		case SMARTI_ERROR_IO:
+			smartid_conn_send_response(c, rv, "Device I/O error");
+			break;
+
+		default:
+			smartid_conn_send_responsef(c, SMARTI_ERROR_INTERNAL, "Internal Error (code %d)", rv);
+
+		}
+
+		smartid_dev_dispose(smartid_conn_device(c));
+		smartid_conn_set_device(c, 0);
+		return;
+	}
+
+	smartid_conn_send_responsef(c, SMARTI_STATUS_INFO, "Data Size %lu", len);
 }
 
 static void smartid_cmd_token(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
 {
+	int rv;
+	uint32_t token;
+
 	CHECK_CMD
 	CHECK_PARAMS
 	CHECK_DEVICE
+
+	if (sscanf("%lu", params, & token) != 1)
+	{
+		smartid_conn_send_responsef(c, SMARTI_ERROR_INVALID_COMMAND, "Invalid device address '%s'", params);
+		smartid_log_warning("Syntax error in command '%s': invalid parameter", cmd->name);
+		return;
+	}
+
+	rv = smartid_dev_set_token(smartid_conn_device(c), token);
+	if (rv != 0)
+	{
+		smartid_conn_send_responsef(c, SMARTI_ERROR_INTERNAL, "Internal Error (code %d)", rv);
+	}
+
+	smartid_conn_send_response(c, SMARTI_STATUS_SUCCESS, "Token Set");
 }
 
 static void smartid_cmd_xfer(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)

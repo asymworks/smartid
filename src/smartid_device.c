@@ -48,10 +48,7 @@
 struct smart_device_t_
 {
 	irda_t			s;			///< IrDA Socket
-
 	unsigned int	epaddr;		///< IrDA Endpoint Address
-	char *			epname;		///< IrDA Endpoint Name
-	char *			devname;	///< Device Name
 
 	int				lsap;		///< IrDA LSAP Identifier
 	size_t			csize;		///< IrDA Chunk Size
@@ -62,6 +59,8 @@ struct smart_device_t_
 	uint8_t			model;		///< Model Number
 	uint32_t		serial;		///< Serial Number
 	uint32_t		ticks;		///< Tick Count
+
+	uint32_t		token;		///< Device Token
 };
 
 int smart_driver_cmd(smart_device_t dev, unsigned char * cmd, ssize_t cmdlen, unsigned char * ans, ssize_t anslen)
@@ -295,10 +294,51 @@ int smartid_dev_connect(smart_device_t dev, unsigned int addr, int lsap, size_t 
 
 int smartid_dev_model(smart_device_t dev, uint8_t * model)
 {
+	if (! dev)
+	{
+		smartid_log_error("Null pointer passed to smartid_dev_model()");
+		return SMARTI_ERROR_INTERNAL;
+	}
+
 	return smart_read_uchar(dev, "\x10", model);
 }
 
-int smartid_dev_serial(smart_device_t dev, uint8_t * serial)
+int smartid_dev_serial(smart_device_t dev, uint32_t * serial)
 {
+	if (! dev)
+	{
+		smartid_log_error("Null pointer passed to smartid_dev_serial()");
+		return SMARTI_ERROR_INTERNAL;
+	}
+
 	return smart_read_ulong(dev, "\x14", serial);
 }
+
+int smartid_dev_set_token(smart_device_t dev, uint32_t token)
+{
+	if (! dev)
+	{
+		smartid_log_error("Null pointer passed to smartid_dev_set_token()");
+		return SMARTI_ERROR_INTERNAL;
+	}
+
+	dev->token = token;
+	return 0;
+}
+
+int smartid_dev_xfer_size(smart_device_t dev, uint32_t * size)
+{
+	int rv;
+	unsigned char cmd[] = { 0xc6, 0, 0, 0, 0, 0x10, 0x27, 0, 0 };
+
+	if (! dev)
+	{
+		smartid_log_error("Null pointer passed to smartid_dev_xfer_size()");
+		return SMARTI_ERROR_INTERNAL;
+	}
+
+	* (uint32_t *)(& cmd[1]) = dev->token;
+
+	return smart_driver_cmd(dev, cmd, 9, (unsigned char *)(size), 4);
+}
+

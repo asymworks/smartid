@@ -85,4 +85,20 @@ int smartid_dev_model(smart_device_t, uint8_t *);
  */
 int smartid_dev_serial(smart_device_t, uint32_t *);
 
+/**
+ * @brief Set the Transfer Token for the Smart Device
+ * @param[in] Smart Device Handle
+ * @param[in] Smart Device Token
+ * @return Zero on Success, Non-Zero on Failure
+ */
+int smartid_dev_set_token(smart_device_t, uint32_t);
+
+/**
+ * @brief Get the Transfer Size for the Smart Device
+ * @param[in] Smart Device Handle
+ * @param[out] Transfer Size
+ * @return Zero on Success, Non-Zero on Failure
+ */
+int smartid_dev_xfer_size(smart_device_t, uint32_t *);
+
 #endif /* SMARTID_DEVICE_H_ */
