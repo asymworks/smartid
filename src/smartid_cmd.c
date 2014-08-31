@@ -496,7 +496,45 @@ static void smartid_cmd_token(smarti_conn_t c, struct smarti_cmd_t * cmd, const 
 
 static void smartid_cmd_xfer(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
 {
+	int rv;
+	uint8_t * buffer;
+	uint32_t size;
+
 	CHECK_CMD
 	CHECK_NO_PARAMS
 	CHECK_DEVICE
+
+	rv = smartid_dev_xfer_data(smartid_conn_device(c), & buffer, & size);
+	if (rv != 0)
+	{
+		switch (rv)
+		{
+		case SMARTI_STATUS_NO_DATA:
+			smartid_conn_send_response(c, rv, "No Data");
+			return;
+
+		case SMARTI_ERROR_TIMEOUT:
+			smartid_conn_send_response(c, rv, "Timeout on Smart Device");
+			break;
+
+		case SMARTI_ERROR_IO:
+			smartid_conn_send_response(c, rv, "Device I/O error");
+			break;
+
+		case SMARTI_ERROR_DEVICE:
+			smartid_conn_send_response(c, rv, "Device Error");
+			return;
+
+		default:
+			smartid_conn_send_responsef(c, SMARTI_ERROR_INTERNAL, "Internal Error (code %d)", rv);
+
+		}
+
+		smartid_dev_dispose(smartid_conn_device(c));
+		smartid_conn_set_device(c, 0);
+		return;
+	}
+
+	smartid_conn_send_buffer(c, buffer, size);
+	free(buffer);
 }

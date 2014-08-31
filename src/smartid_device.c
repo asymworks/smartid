@@ -323,7 +323,6 @@ int smartid_dev_set_token(smart_device_t dev, uint32_t token)
 
 int smartid_dev_xfer_size(smart_device_t dev, uint32_t * size)
 {
-	int rv;
 	unsigned char cmd[] = { 0xc6, 0, 0, 0, 0, 0x10, 0x27, 0, 0 };
 
 	if (! dev)
@@ -335,5 +334,82 @@ int smartid_dev_xfer_size(smart_device_t dev, uint32_t * size)
 	* (uint32_t *)(& cmd[1]) = dev->token;
 
 	return smart_driver_cmd(dev, cmd, 9, (unsigned char *)(size), 4);
+}
+
+int smartid_dev_xfer_data(smart_device_t dev, uint8_t ** buf, uint32_t * size)
+{
+	int rv;
+	uint32_t nb;
+	uint32_t pos;
+	uint32_t len;
+	int timeout;
+	unsigned char cmd[] = { 0xc4, 0, 0, 0, 0, 0x10, 0x27, 0, 0 };
+
+	if (! dev || ! buf)
+	{
+		smartid_log_error("Null pointer passed to smartid_dev_xfer_data()");
+		return SMARTI_ERROR_INTERNAL;
+	}
+
+	* (uint32_t *)(& cmd[1]) = dev->token;
+
+	rv = smart_driver_cmd(dev, cmd, 9, (unsigned char *)(& nb), 4);
+	if (rv != 0)
+		return rv;
+
+	if (nb == 0)
+	{
+		smartid_log_debug("No bytes to transfer from device");
+		return SMARTI_STATUS_NO_DATA;
+	}
+
+	if (nb < 4)
+	{
+		smartid_log_warning("Data length too short (%lu bytes)", nb);
+		return SMARTI_ERROR_DEVICE;
+	}
+
+	(* size) = nb - 4;
+	(* buf) = malloc(size);
+
+	pos = 0;
+	len = (* size);
+	while (len > 0)
+	{
+		size_t nc;
+
+		if (len > dev->csize)
+		{
+			nc = dev->csize;
+		}
+		else
+		{
+			nc = len;
+		}
+
+		rv = irda_socket_read(dev->s, & buf[pos], & nc, & timeout);
+		if (rv != 0)
+		{
+			smartid_log_error("Failed to read from the Uwatec Smart Device");
+			free(buf);
+			* buf = 0;
+			* size = 0;
+			return SMARTI_ERROR_IO;
+		}
+
+		if (timeout)
+		{
+			smartid_log_error("Timed out reading from the Uwatec Smart Device");
+			free(buf);
+			* buf = 0;
+			* size = 0;
+			return SMARTI_ERROR_TIMEOUT;
+		}
+
+		len -= nc;
+		pos += nc;
+	}
+
+	return 0;
 }
 

@@ -101,4 +101,13 @@ int smartid_dev_set_token(smart_device_t, uint32_t);
  */
 int smartid_dev_xfer_size(smart_device_t, uint32_t *);
 
+/**
+ * @brief Get the Dive Data from the Smart Device
+ * @param[in] Smart Device Handle
+ * @param[out] Data Buffer
+ * @param[out] Data Size
+ * @return Zero on Success, Non-Zero on Failure
+ */
+int smartid_dev_xfer_data(smart_device_t, uint8_t **, uint32_t *);
+
 #endif /* SMARTID_DEVICE_H_ */
