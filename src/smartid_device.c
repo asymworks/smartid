@@ -420,8 +420,10 @@ int smartid_dev_xfer_data(smart_device_t dev, uint8_t ** buf, uint32_t * size)
 		len -= nc;
 		pos += nc;
 
-		smartid_log_debug("Transferred chunk: %lu, cum: %lu, tot: %lu, rem: %lu", nc, pos, * size, len);
+		/* smartid_log_debug("Transferred chunk: %lu, cum: %lu, tot: %lu, rem: %lu", nc, pos, * size, len); */
 	}
+
+	smartid_log_debug("Transferred %lu bytes", * size);
 
 	return 0;
 }
