@@ -32,7 +32,31 @@ set(CMAKE_MODULE_PATH
 )
 
 # Setup Application Paths
-SET(SMARTID_PIDFILE		"/var/run/${SMARTID_APP_NAME}.pid")
+SET(SMARTID_DATADIR		    "${CMAKE_INSTALL_PREFIX}/share/${SMARTID_APP_NAME}")
+SET(SMARTID_MANDIR		    "${CMAKE_INSTALL_PREFIX}/share/man")
+SET(SMARTID_BINDIR          "${CMAKE_INSTALL_PREFIX}/bin")
+SET(SMARTID_SBINDIR         "${CMAKE_INSTALL_PREFIX}/sbin")
+
+SET(SMARTID_PIDFILE		    "/var/run/${SMARTID_APP_NAME}.pid")
+
+# Setup SysV Init Script
+configure_file(
+    ${CMAKE_SOURCE_DIR}/dist/sysvinit-smartid.in 
+    ${CMAKE_BINARY_DIR}/sysvinit-smartid 
+    @ONLY)
 
 # Run Subdirectories
 add_subdirectory(src)
+
+# Install top-level files
+install(FILES ${CMAKE_SOURCE_DIR}/LICENSE DESTINATION ${SMARTID_DATADIR}/)
+install(FILES ${CMAKE_SOURCE_DIR}/README DESTINATION ${SMARTID_DATADIR}/)
+
+# Install SysV init script
+install(
+    FILES ${CMAKE_BINARY_DIR}/sysvinit-smartid 
+    DESTINATION /etc/init.d/${SMARTID_APP_NAME}
+    PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+                GROUP_EXECUTE             GROUP_READ
+                WORLD_EXECUTE             WORLD_READ
+)

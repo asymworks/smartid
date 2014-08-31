@@ -40,12 +40,17 @@ include_directories(
 )
 
 # Build the Application
-add_executable(smartid
+add_executable(${SMARTID_APP_NAME}
 	${SMARTID_SRCS}
 )
 
 # Link the Application
-target_link_libraries(smartid
+target_link_libraries(${SMARTID_APP_NAME}
     ${EVENT_CORE_LIBRARIES}
 )
 
+# Install the Application
+install(
+    TARGETS ${SMARTID_APP_NAME}
+    DESTINATION ${SMARTID_SBINDIR}
+)
