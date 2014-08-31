@@ -357,9 +357,11 @@ int smartid_dev_xfer_data(smart_device_t dev, uint8_t ** buf, uint32_t * size)
 	if (rv != 0)
 		return rv;
 
-	if (nb == 0)
+	if (nb == 4)
 	{
 		smartid_log_debug("No bytes to transfer from device");
+		* buf = 0;
+		* size = 0;
 		return SMARTI_STATUS_NO_DATA;
 	}
 
