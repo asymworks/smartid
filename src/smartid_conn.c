@@ -382,7 +382,7 @@ void smartid_conn_send_buffer(smarti_conn_t conn, void * data, size_t len)
 		return;
 	}
 
-	smartid_conn_send_responsef(conn, 301, "Data Follows (%u)", b64len);
+	smartid_conn_send_responsef(conn, 301, "Data Follows: %u", b64len);
 	pos = 0;
 
 	while (pos < b64len)

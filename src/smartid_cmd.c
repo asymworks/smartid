@@ -267,7 +267,7 @@ static void smartid_cmd_enum(smarti_conn_t c, struct smarti_cmd_t * cmd, const c
 	/* Generate Return Information */
 	for (it = list; it; it = it->next)
 	{
-		smartid_conn_send_responsef(c, SMARTI_STATUS_INFO, "Device %lu: %s", it->addr, it->name);
+		smartid_conn_send_responsef(c, SMARTI_STATUS_INFO, "Device %s: %lu", it->addr, it->name);
 	}
 
 	/* Free Connection List */
@@ -329,7 +329,7 @@ static void smartid_cmd_model(smarti_conn_t c, struct smarti_cmd_t * cmd, const 
 		return;
 	}
 
-	smartid_conn_send_responsef(c, SMARTI_STATUS_INFO, "Model Number %u", model);
+	smartid_conn_send_responsef(c, SMARTI_STATUS_INFO, "Model Number: %u", model);
 }
 
 static void smartid_cmd_open(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
@@ -431,7 +431,7 @@ static void smartid_cmd_serial(smarti_conn_t c, struct smarti_cmd_t * cmd, const
 		return;
 	}
 
-	smartid_conn_send_responsef(c, SMARTI_STATUS_INFO, "Serial Number %lu", serial);
+	smartid_conn_send_responsef(c, SMARTI_STATUS_INFO, "Serial Number: %lu", serial);
 }
 
 static void smartid_cmd_size(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
@@ -466,7 +466,7 @@ static void smartid_cmd_size(smarti_conn_t c, struct smarti_cmd_t * cmd, const c
 		return;
 	}
 
-	smartid_conn_send_responsef(c, SMARTI_STATUS_INFO, "Data Size %lu", len);
+	smartid_conn_send_responsef(c, SMARTI_STATUS_INFO, "Data Size: %lu", len);
 }
 
 static void smartid_cmd_token(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
