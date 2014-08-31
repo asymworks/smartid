@@ -456,9 +456,9 @@ int main(int argc, char ** argv)
 		fclose(fp_pid);
 
 		/* Close Standard I/O */
-		close(stdin);
-		close(stdout);
-		close(stderr);
+		close(STDIN_FILENO);
+		close(STDOUT_FILENO);
+		close(STDERR_FILENO);
 	}
 
 	/* Setup IrDA */
