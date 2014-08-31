@@ -68,6 +68,8 @@ static void smartid_cmd_model(smarti_conn_t, struct smarti_cmd_t *, const char *
 static void smartid_cmd_open(smarti_conn_t, struct smarti_cmd_t *, const char *);
 static void smartid_cmd_serial(smarti_conn_t, struct smarti_cmd_t *, const char *);
 static void smartid_cmd_size(smarti_conn_t, struct smarti_cmd_t *, const char *);
+static void smartid_cmd_tcorr(smarti_conn_t, struct smarti_cmd_t *, const char *);
+static void smartid_cmd_ticks(smarti_conn_t, struct smarti_cmd_t *, const char *);
 static void smartid_cmd_token(smarti_conn_t, struct smarti_cmd_t *, const char *);
 static void smartid_cmd_xfer(smarti_conn_t, struct smarti_cmd_t *, const char *);
 /*@}*/
@@ -82,6 +84,8 @@ static struct smarti_cmd_t smarti_cmd_table[] =
 	{"open",	"Open a connection to an IrDA device",					smartid_cmd_open},
 	{"serial",	"Print the serial number of the open device",			smartid_cmd_serial},
 	{"size",	"Print the size of the next transfer in bytes",			smartid_cmd_size},
+	{"tcorr",	"Print the time correction value of the open device",	smartid_cmd_tcorr},
+	{"ticks",	"Print the time tick value of the open device",			smartid_cmd_ticks},
 	{"token",	"Set the token for the next transfer operation",		smartid_cmd_token},
 	{"xfer",	"Transfer data from the device",						smartid_cmd_xfer},
 	{0,			0,														0}
@@ -467,6 +471,48 @@ static void smartid_cmd_size(smarti_conn_t c, struct smarti_cmd_t * cmd, const c
 	}
 
 	smartid_conn_send_responsef(c, SMARTI_STATUS_INFO, "Data Size: %lu", len);
+}
+
+static void smartid_cmd_tcorr(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
+{
+	int rv;
+	uint32_t tcorr;
+
+	CHECK_CMD
+	CHECK_NO_PARAMS
+	CHECK_DEVICE
+
+	rv = smartid_dev_tcorr(smartid_conn_device(c), & tcorr);
+	if (rv != 0)
+	{
+		smartid_conn_send_responsef(c, SMARTI_ERROR_INTERNAL, "Internal Error (code %d)", rv);
+		smartid_dev_dispose(smartid_conn_device(c));
+		smartid_conn_set_device(c, 0);
+		return;
+	}
+
+	smartid_conn_send_responsef(c, SMARTI_STATUS_INFO, "Time Correction: %lu", tcorr);
+}
+
+static void smartid_cmd_ticks(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)
+{
+	int rv;
+	uint32_t ticks;
+
+	CHECK_CMD
+	CHECK_NO_PARAMS
+	CHECK_DEVICE
+
+	rv = smartid_dev_ticks(smartid_conn_device(c), & ticks);
+	if (rv != 0)
+	{
+		smartid_conn_send_responsef(c, SMARTI_ERROR_INTERNAL, "Internal Error (code %d)", rv);
+		smartid_dev_dispose(smartid_conn_device(c));
+		smartid_conn_set_device(c, 0);
+		return;
+	}
+
+	smartid_conn_send_responsef(c, SMARTI_STATUS_INFO, "Ticks: %lu", ticks);
 }
 
 static void smartid_cmd_token(smarti_conn_t c, struct smarti_cmd_t * cmd, const char * params)

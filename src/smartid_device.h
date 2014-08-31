@@ -86,6 +86,22 @@ int smartid_dev_model(smart_device_t, uint8_t *);
 int smartid_dev_serial(smart_device_t, uint32_t *);
 
 /**
+ * @brief Get the Time Correction of a Smart Device
+ * @param[in] Smart Device Handle
+ * @param[out] Smart Device Time Correction
+ * @return Zero on Success, Non-Zero on Failure
+ */
+int smartid_dev_tcorr(smart_device_t, uint32_t *);
+
+/**
+ * @brief Get the Time Ticks of a Smart Device
+ * @param[in] Smart Device Handle
+ * @param[out] Smart Device Ticks
+ * @return Zero on Success, Non-Zero on Failure
+ */
+int smartid_dev_ticks(smart_device_t, uint32_t *);
+
+/**
  * @brief Set the Transfer Token for the Smart Device
  * @param[in] Smart Device Handle
  * @param[in] Smart Device Token

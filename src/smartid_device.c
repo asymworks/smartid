@@ -310,6 +310,30 @@ int smartid_dev_serial(smart_device_t dev, uint32_t * serial)
 	return smart_read_ulong(dev, "\x14", serial);
 }
 
+int smartid_dev_tcorr(smart_device_t dev, uint32_t * tcorr)
+{
+	if (! dev)
+	{
+		smartid_log_error("Null pointer passed to smartid_dev_tcorr()");
+		return SMARTI_ERROR_INTERNAL;
+	}
+
+	* tcorr = dev->tcorr;
+	return 0;
+}
+
+int smartid_dev_ticks(smart_device_t dev, uint32_t * ticks)
+{
+	if (! dev)
+	{
+		smartid_log_error("Null pointer passed to smartid_dev_ticks()");
+		return SMARTI_ERROR_INTERNAL;
+	}
+
+	* ticks = dev->ticks;
+	return 0;
+}
+
 int smartid_dev_set_token(smart_device_t dev, uint32_t token)
 {
 	if (! dev)
