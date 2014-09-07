@@ -354,14 +354,11 @@ void smartid_conn_send_responsef(smarti_conn_t conn, uint16_t code, const char *
 	smartid_conn_send_response(conn, code, buf);
 }
 
-#define BASE64_LINE_LENGTH		76
-
 void smartid_conn_send_buffer(smarti_conn_t conn, void * data, size_t len)
 {
 	char * b64data;
-	char line[BASE64_LINE_LENGTH];
+	char * b64line;
 	size_t b64len;
-	size_t pos;
 
 	if (! conn)
 	{
@@ -382,21 +379,15 @@ void smartid_conn_send_buffer(smarti_conn_t conn, void * data, size_t len)
 		return;
 	}
 
-	smartid_conn_send_responsef(conn, 301, "Data Follows: %u", b64len);
-	pos = 0;
+	smartid_conn_send_responsef(conn, SMARTI_DATA_FOLLOWS, "Data Follows: %u", b64len);
 
-	while (pos < b64len)
-	{
-		strncpy(line, & b64data[pos], BASE64_LINE_LENGTH);
+	b64line = (char *)malloc(b64len + 1);
+	b64line = strncpy(b64line, b64data, b64len);
+	b64line[b64len] = 0;
 
-		if (evbuffer_add_printf(conn->ev_buffer, "%s\n", b64data) < 0)
-		{
-			smartid_log_error("Failed to transfer data buffer in smartid_conn_send_buffer()");
-			break;
-		}
+	evbuffer_add_printf(conn->ev_buffer, "%s\n", b64line);
 
-		pos += BASE64_LINE_LENGTH;
-	}
+	free(b64line);
 }
 
 void smartid_conn_flush(smarti_conn_t conn)
